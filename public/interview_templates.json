@@ -1,0 +1,120 @@
+{
+  "Software": [
+    {
+      "subTitle": "Frontend Developer",
+      "difficulty": "Medium",
+      "duration_minutes": 30,
+      "question_count": 5,
+      "questions": [
+        "Can you explain the difference between React and Vue.js?",
+        "How do you handle state management in a large React application?",
+        "Describe your experience with responsive web design.",
+        "What is your approach to testing frontend code?",
+        "How do you optimize website performance?"
+      ]
+    },
+    {
+      "subTitle": "Backend Developer",
+      "difficulty": "Hard",
+      "duration_minutes": 45,
+      "question_count": 6,
+      "questions": [
+        "Explain the difference between REST and GraphQL APIs.",
+        "How do you handle database migrations in production?",
+        "Describe your experience with microservices architecture.",
+        "What security measures do you implement in your APIs?",
+        "How do you handle caching strategies?",
+        "Explain the CAP theorem and its implications."
+      ]
+    },
+    {
+      "subTitle": "Full Stack Developer",
+      "difficulty": "Hard",
+      "duration_minutes": 60,
+      "question_count": 7,
+      "questions": [
+        "How do you approach full-stack development projects?",
+        "Explain the difference between SQL and NoSQL databases.",
+        "Describe your experience with cloud platforms (AWS, Azure, GCP).",
+        "How do you ensure code quality across the entire stack?",
+        "What is your approach to API design?",
+        "How do you handle authentication and authorization?",
+        "Describe a challenging technical problem you solved recently."
+      ]
+    }
+  ],
+  "Data Science": [
+    {
+      "subTitle": "Data Scientist",
+      "difficulty": "Hard",
+      "duration_minutes": 45,
+      "question_count": 6,
+      "questions": [
+        "Explain the difference between supervised and unsupervised learning.",
+        "How do you handle missing data in a dataset?",
+        "Describe your experience with machine learning algorithms.",
+        "What is your approach to feature engineering?",
+        "How do you evaluate model performance?",
+        "Explain the bias-variance tradeoff."
+      ]
+    },
+    {
+      "subTitle": "Data Analyst",
+      "difficulty": "Medium",
+      "duration_minutes": 30,
+      "question_count": 5,
+      "questions": [
+        "How do you approach data cleaning and preprocessing?",
+        "Describe your experience with SQL and data visualization.",
+        "What tools do you use for statistical analysis?",
+        "How do you present insights to non-technical stakeholders?",
+        "What is your process for validating data quality?"
+      ]
+    }
+  ],
+  "Design": [
+    {
+      "subTitle": "UI/UX Designer",
+      "difficulty": "Medium",
+      "duration_minutes": 30,
+      "question_count": 5,
+      "questions": [
+        "Walk me through your design process from research to final product.",
+        "How do you conduct user research and usability testing?",
+        "What design tools do you prefer and why?",
+        "How do you balance user needs with business requirements?",
+        "Describe a design challenge you faced and how you solved it."
+      ]
+    }
+  ],
+  "Finance": [
+    {
+      "subTitle": "Financial Analyst",
+      "difficulty": "Medium",
+      "duration_minutes": 30,
+      "question_count": 5,
+      "questions": [
+        "How do you analyze financial statements?",
+        "Describe your experience with financial modeling.",
+        "What is your approach to risk assessment?",
+        "How do you stay updated with market trends?",
+        "Explain a complex financial concept to a non-financial audience."
+      ]
+    }
+  ],
+  "Marketing": [
+    {
+      "subTitle": "Digital Marketing Manager",
+      "difficulty": "Medium",
+      "duration_minutes": 30,
+      "question_count": 5,
+      "questions": [
+        "How do you develop a digital marketing strategy?",
+        "Describe your experience with SEO and SEM.",
+        "What metrics do you use to measure campaign success?",
+        "How do you approach A/B testing?",
+        "Describe a successful marketing campaign you managed."
+      ]
+    }
+  ]
+}

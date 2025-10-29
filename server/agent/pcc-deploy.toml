@@ -1,0 +1,6 @@
+agent_name = "jastalk-first-pipecat-agent"
+image = "jiawendocker/jastalk-first-pipecat-agent:0.1"
+secret_set = "quickstart-secrets"
+
+[scaling]
+	min_agents = 1

@@ -1,0 +1,53 @@
+// Type definitions for the Interview Agent
+
+export interface InterviewTemplate {
+    subTitle: string;
+    difficulty: 'Easy' | 'Medium' | 'Hard';
+    duration_minutes: number;
+    question_count: number;
+    questions: string[];
+}
+
+export interface InterviewTemplates {
+    [category: string]: InterviewTemplate[];
+}
+
+export interface Category {
+    id: number;
+    name: string;
+    positions: number;
+    color: string;
+    bgColor: string;
+    borderColor: string;
+    icon: string;
+    interviews: InterviewTemplate[];
+}
+
+export interface UserAnswer {
+    question: string;
+    answer: string;
+}
+
+export interface VapiMessage {
+    type: string;
+    role: 'user' | 'assistant';
+    transcript: string;
+    transcriptType?: string;
+}
+
+export interface VapiInstance {
+    on: (event: string, callback: (data?: any) => void) => void;
+    emit: (event: string, data?: any) => void;
+    start: (config: any) => Promise<void>;
+    stop: () => void;
+    isActive: () => boolean;
+}
+
+// Extend Window interface for Vapi
+declare global {
+    interface Window {
+        Vapi?: new (publicKey: string) => VapiInstance;
+    }
+}
+
+export { };

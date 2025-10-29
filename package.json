@@ -1,0 +1,59 @@
+{
+  "name": "jastalk-vapi-interview-agent",
+  "version": "1.0.0",
+  "description": "AI-powered voice interview agent using Vapi",
+  "main": "index.js",
+  "scripts": {
+    "dev": "cross-env NODE_OPTIONS=--no-deprecation vite --port 3002",
+    "dev:local": "cp .env.local .env && cross-env NODE_OPTIONS=--no-deprecation vite --port 3002",
+    "dev:cloud": "cp .env.cloud .env && cross-env NODE_OPTIONS=--no-deprecation vite --port 3002",
+    "build": "vite build",
+    "preview": "vite preview --port 3002",
+    "start": "vite --port 3002",
+    "pipecat:dev": "node server/pipecat-dev.js",
+    "dev:all": "npm-run-all -p pipecat:dev dev",
+    "dev:all:local": "npm-run-all -p pipecat:dev dev:local",
+    "dev:all:cloud": "npm-run-all -p pipecat:dev dev:cloud",
+    "vercel:dev": "vercel dev -t $VERCEL_BEARER_TOKEN",
+    "dev:vercel": "cross-env PROXY_VERCEL=1 npm-run-all -p vercel:dev dev",
+    "deploy:preview": "vercel deploy -t $VERCEL_BEARER_TOKEN",
+    "deploy:prod": "vercel deploy --prod -t $VERCEL_BEARER_TOKEN",
+    "env:local": "cp .env.local .env && echo 'Switched to local environment'",
+    "env:cloud": "cp .env.cloud .env && echo 'Switched to cloud environment'"
+  },
+  "dependencies": {
+    "@pipecat-ai/client-js": "^1.4.0",
+    "@pipecat-ai/daily-transport": "^1.4.0",
+    "@pipecat-ai/small-webrtc-transport": "^1.7.0",
+    "@vapi-ai/web": "^1.0.0",
+    "lucide-react": "^0.263.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^7.9.4"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
+    "@vitejs/plugin-react": "^4.0.3",
+    "autoprefixer": "^10.4.14",
+    "cross-env": "^7.0.3",
+    "npm-run-all": "^4.1.5",
+    "postcss": "^8.4.24",
+    "tailwindcss": "^3.3.0",
+    "typescript": "^4.9.5",
+    "vercel": "^48.4.0",
+    "vite": "^7.1.10"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

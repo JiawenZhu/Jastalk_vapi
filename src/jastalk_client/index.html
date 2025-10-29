@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JasTalk Interview Agent</title>
+  <link rel="icon" href="/playground/favicon.svg" type="image/svg+xml">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      padding: 30px;
+      max-width: 900px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    h1 {
+      color: #667eea;
+      margin-bottom: 10px;
+      font-size: 2em;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 20px;
+      font-size: 0.9em;
+    }
+    .interview-info {
+      background: linear-gradient(135deg, #f7f9fc 0%, #e8f0fe 100%);
+      border-left: 4px solid #667eea;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 8px;
+    }
+    .interview-info h3 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 1.2em;
+    }
+    .interview-info p {
+      color: #666;
+      margin: 5px 0;
+      font-size: 0.95em;
+    }
+    .interview-info strong {
+      color: #667eea;
+      font-weight: 600;
+    }
+    .instructions {
+      background: #fff3cd;
+      border: 2px solid #ffc107;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 20px 0;
+    }
+    .instructions h3 {
+      color: #856404;
+      margin-bottom: 10px;
+    }
+    .instructions p {
+      color: #856404;
+      line-height: 1.6;
+    }
+    #root {
+      margin: 20px 0;
+      min-height: 400px;
+    }
+    .status {
+      text-align: center;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 6px;
+      font-size: 0.9em;
+    }
+    .status.info {
+      background: #d1ecf1;
+      color: #0c5460;
+    }
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+    }
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎤 JasTalk Interview Agent</h1>
+    <p class="subtitle">AI-Powered Voice Interview Practice</p>
+
+    <div id="interview-info" class="interview-info hidden">
+      <h3>📋 Interview Details</h3>
+      <p><strong>Role:</strong> <span id="info-title">-</span></p>
+      <p><strong>Difficulty:</strong> <span id="info-difficulty">-</span></p>
+      <p><strong>Duration:</strong> <span id="info-duration">-</span> minutes</p>
+      <p><strong>Category:</strong> <span id="info-category">-</span></p>
+    </div>
+
+    <div class="instructions">
+      <h3>👋 How to Start</h3>
+      <p>
+        1️⃣ Click the <strong>microphone button</strong> below to grant permissions<br>
+        2️⃣ Wait for connection to establish<br>
+        3️⃣ Say <strong>"Hey"</strong> or <strong>"Hello"</strong> to begin!<br>
+        <br>
+        The AI agent has full context of your interview and is ready to help! 🎯
+      </p>
+    </div>
+
+    <div id="status" class="status info">
+      Loading Pipecat client...
+    </div>
+
+    <!-- Pipecat UI will be injected here -->
+    <div id="root"></div>
+  </div>
+
+  <!-- Load Pipecat prebuilt client -->
+  <script type="module" crossorigin src="/playground/assets/index-CJ8kfZwS.js"></script>
+  <link rel="stylesheet" crossorigin href="/playground/assets/index-CdJgXBqL.css">
+
+  <!-- Simple script to display interview information -->
+  <script type="module">
+    // Extract and display URL parameters
+    function displayInterviewInfo() {
+      const params = new URLSearchParams(window.location.search);
+      const interviewTitle = params.get('interview_title') || '';
+      const interviewDifficulty = params.get('interview_difficulty') || '';
+      const interviewDuration = params.get('interview_duration') || '';
+      const interviewCategory = params.get('interview_category') || '';
+
+      if (interviewTitle) {
+        document.getElementById('info-title').textContent = interviewTitle;
+        document.getElementById('info-difficulty').textContent = interviewDifficulty || 'N/A';
+        document.getElementById('info-duration').textContent = interviewDuration || 'N/A';
+        document.getElementById('info-category').textContent = interviewCategory || 'N/A';
+        document.getElementById('interview-info').classList.remove('hidden');
+
+        console.log('🎯 JasTalk Interview Agent loaded');
+        console.log('📊 Interview role:', interviewTitle);
+        console.log('✅ Interview data will be automatically sent to the AI agent via backend');
+      }
+
+      // Update status message
+      setTimeout(() => {
+        const statusEl = document.getElementById('status');
+        statusEl.textContent = 'Ready! Click the microphone button below to start.';
+        statusEl.className = 'status info';
+      }, 1000);
+    }
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', displayInterviewInfo);
+  </script>
+</body>
+</html>

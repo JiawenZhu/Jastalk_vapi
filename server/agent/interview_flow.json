@@ -1,0 +1,486 @@
+{
+    "name": "interview_flow",
+    "nodes": [
+        {
+            "name": "introduction",
+            "type": "conversation",
+            "isStart": true,
+            "metadata": {
+                "position": {
+                    "x": -450,
+                    "y": -120
+                }
+            },
+            "prompt": "You are an interview agent for {{company_name|JasTalk}}. Start courteously, confirm the candidate’s name and the role they’re interviewing for. Explain the process: brief intro, background, a few behavioral and technical questions, candidate questions, and next steps. One question at a time. Warm, professional, concise.",
+            "messagePlan": {
+                "firstMessage": "Hi {{candidate_name|there}}, thanks for joining. I’ll guide this interview for the {{role|Frontend Engineer}} role. Does that sound good?"
+            },
+            "variableExtractionPlan": {
+                "output": [
+                    {
+                        "type": "string",
+                        "title": "candidate_name",
+                        "description": "candidate’s preferred name"
+                    },
+                    {
+                        "type": "string",
+                        "title": "role",
+                        "description": "role they are interviewing for"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "role_confirmation",
+            "type": "conversation",
+            "metadata": {
+                "position": {
+                    "x": -60,
+                    "y": -120
+                }
+            },
+            "prompt": "Confirm the role ({{role}}) and align basic expectations. Ask if they’ve reviewed the JD and are ready to proceed. Keep responses under 25 words unless needed.",
+            "variableExtractionPlan": {
+                "output": [
+                    {
+                        "type": "string",
+                        "title": "role_alignment_notes",
+                        "description": "notes on expectation alignment"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "background_summary",
+            "type": "conversation",
+            "metadata": {
+                "position": {
+                    "x": 300,
+                    "y": -120
+                }
+            },
+            "prompt": "Ask for a brief background: years of experience, primary stack, strongest skills, recent projects. Acknowledge and probe for specifics. Keep follow‑ups short.",
+            "variableExtractionPlan": {
+                "output": [
+                    {
+                        "type": "number",
+                        "title": "years_experience",
+                        "description": "total years of professional experience"
+                    },
+                    {
+                        "type": "string",
+                        "title": "primary_stack",
+                        "description": "primary tech stack (e.g., React/Node)"
+                    },
+                    {
+                        "type": "string",
+                        "title": "strongest_skills",
+                        "description": "candidate’s strongest skills"
+                    },
+                    {
+                        "type": "string",
+                        "title": "recent_projects",
+                        "description": "short summary of recent projects"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "screening_must_have",
+            "type": "conversation",
+            "metadata": {
+                "position": {
+                    "x": 680,
+                    "y": -120
+                }
+            },
+            "prompt": "Ask for must‑have items for {{role}}: e.g., for Frontend—React, TypeScript, state mgmt; for Backend—APIs, DB, scaling; for Mobile—native or RN/Flutter, app lifecycle. Verify eligibility constraints (location/timezone/visa). Keep it crisp. Mark pass/fail and reason if fail.",
+            "variableExtractionPlan": {
+                "output": [
+                    {
+                        "type": "boolean",
+                        "title": "must_have_pass",
+                        "description": "true if must‑have requirements met"
+                    },
+                    {
+                        "type": "string",
+                        "title": "must_have_reason",
+                        "description": "if fail, key missing items"
+                    },
+                    {
+                        "type": "string",
+                        "title": "location_timezone",
+                        "description": "candidate’s location / timezone"
+                    },
+                    {
+                        "type": "string",
+                        "title": "visa_status",
+                        "description": "work authorization/visa status"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "behavioral_star",
+            "type": "conversation",
+            "metadata": {
+                "position": {
+                    "x": 1020,
+                    "y": 120
+                }
+            },
+            "prompt": "Ask 1–2 behavioral questions using STAR (Situation, Task, Action, Result). Encourage specifics, impact, and lessons learned. Keep follow‑ups focused.",
+            "variableExtractionPlan": {
+                "output": [
+                    {
+                        "type": "string",
+                        "title": "behavioral_examples",
+                        "description": "key STAR examples mentioned"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "technical_deep_dive",
+            "type": "conversation",
+            "metadata": {
+                "position": {
+                    "x": 1020,
+                    "y": 520
+                }
+            },
+            "prompt": "Do a technical deep dive tailored to {{role}}. For Frontend: component architecture, state mgmt, performance, accessibility, testing. For Backend: API design, data modeling, scaling, reliability, observability. Ask one topic at a time, probe depth. Keep answers under 40 words unless the candidate requests more time.",
+            "variableExtractionPlan": {
+                "output": [
+                    {
+                        "type": "string",
+                        "title": "tech_topics_covered",
+                        "description": "topics discussed in deep dive"
+                    },
+                    {
+                        "type": "string",
+                        "title": "tech_strengths",
+                        "description": "notable strengths"
+                    },
+                    {
+                        "type": "string",
+                        "title": "tech_gaps",
+                        "description": "notable gaps"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "system_design",
+            "type": "conversation",
+            "metadata": {
+                "position": {
+                    "x": 1020,
+                    "y": 900
+                }
+            },
+            "prompt": "If seniority ≥ mid, run a small system/architecture prompt: clarify requirements, outline components, data flows, scaling and reliability trade‑offs, and testing/observability. Keep facilitation focused.",
+            "variableExtractionPlan": {
+                "output": [
+                    {
+                        "type": "string",
+                        "title": "design_notes",
+                        "description": "key design ideas / trade‑offs"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "salary_availability",
+            "type": "conversation",
+            "metadata": {
+                "position": {
+                    "x": 680,
+                    "y": 1100
+                }
+            },
+            "prompt": "Ask for availability/notice period, desired salary/comp, and preferred work model (onsite/hybrid/remote). Be mindful and respectful. Keep it brief.",
+            "variableExtractionPlan": {
+                "output": [
+                    {
+                        "type": "number",
+                        "title": "notice_period_weeks",
+                        "description": "notice period in weeks"
+                    },
+                    {
+                        "type": "string",
+                        "title": "salary_expectation",
+                        "description": "salary or compensation expectation"
+                    },
+                    {
+                        "type": "string",
+                        "title": "work_model",
+                        "description": "onsite/hybrid/remote preference"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "candidate_questions",
+            "type": "conversation",
+            "metadata": {
+                "position": {
+                    "x": 300,
+                    "y": 1100
+                }
+            },
+            "prompt": "Invite the candidate’s questions (team, roadmap, stack, culture, process). Answer concisely; if unknown, say you’ll pass along.",
+            "variableExtractionPlan": {
+                "output": [
+                    {
+                        "type": "string",
+                        "title": "candidate_questions_notes",
+                        "description": "summary of candidate’s questions"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "summarize_and_score",
+            "type": "conversation",
+            "metadata": {
+                "position": {
+                    "x": -60,
+                    "y": 1100
+                }
+            },
+            "prompt": "Internally summarize strengths, gaps, and risk flags. Score 1–5 in: communication, problem‑solving, technical depth, culture fit. Do not read the rubric aloud; keep outward responses friendly and brief.",
+            "variableExtractionPlan": {
+                "output": [
+                    {
+                        "type": "number",
+                        "title": "score_communication",
+                        "description": "1-5"
+                    },
+                    {
+                        "type": "number",
+                        "title": "score_problem_solving",
+                        "description": "1-5"
+                    },
+                    {
+                        "type": "number",
+                        "title": "score_technical_depth",
+                        "description": "1-5"
+                    },
+                    {
+                        "type": "number",
+                        "title": "score_culture_fit",
+                        "description": "1-5"
+                    },
+                    {
+                        "type": "string",
+                        "title": "recommendation",
+                        "description": "go/hold/no-go + brief rationale"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "schedule_or_followup",
+            "type": "conversation",
+            "metadata": {
+                "position": {
+                    "x": -420,
+                    "y": 1100
+                }
+            },
+            "prompt": "If proceeding, propose a next interview (30–60 min) and gather times that work; if not proceeding now, set expectations for follow-up. Capture email and preferred timeslot.",
+            "variableExtractionPlan": {
+                "output": [
+                    {
+                        "type": "string",
+                        "title": "contact_email",
+                        "description": "candidate’s email"
+                    },
+                    {
+                        "type": "string",
+                        "title": "preferred_timeslot",
+                        "description": "candidate’s preferred meeting time(s)"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "reschedule_call",
+            "type": "conversation",
+            "metadata": {
+                "position": {
+                    "x": -760,
+                    "y": 400
+                }
+            },
+            "prompt": "If timing is bad: acknowledge, propose rescheduling, ask for time window and contact preference. Be flexible and courteous.",
+            "variableExtractionPlan": {
+                "output": [
+                    {
+                        "type": "string",
+                        "title": "callback_time",
+                        "description": "when to reconnect"
+                    },
+                    {
+                        "type": "string",
+                        "title": "contact_preference",
+                        "description": "email/phone/other"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "disqualify_closure",
+            "type": "conversation",
+            "metadata": {
+                "position": {
+                    "x": 680,
+                    "y": 1460
+                }
+            },
+            "prompt": "If disqualifying now, close respectfully: explain at a high level, thank them, and invite reconnect if circumstances change. Keep it kind and brief.",
+            "variableExtractionPlan": {
+                "output": [
+                    {
+                        "type": "string",
+                        "title": "disqualify_reason",
+                        "description": "brief reason(s)"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "human_handoff",
+            "type": "conversation",
+            "metadata": {
+                "position": {
+                    "x": 1020,
+                    "y": 1460
+                }
+            },
+            "prompt": "Confirm the candidate wants to speak with a human recruiter or hiring manager. Ask what they’d like to discuss and confirm contact info.",
+            "globalNodePlan": {
+                "enabled": true,
+                "enterCondition": "User asks for a human or the agent detects dissatisfaction/escalation keywords"
+            },
+            "variableExtractionPlan": {
+                "output": [
+                    {
+                        "type": "string",
+                        "title": "handoff_topic",
+                        "description": "what they want to discuss with a human"
+                    },
+                    {
+                        "type": "string",
+                        "title": "contact_phone",
+                        "description": "optional phone number"
+                    }
+                ]
+            }
+        },
+
+        {
+            "name": "End Call",
+            "type": "tool",
+            "metadata": {
+                "position": {
+                    "x": -760,
+                    "y": 1460
+                }
+            },
+            "tool": {
+                "type": "endCall",
+                "function": {
+                    "name": "end",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {}
+                    }
+                },
+                "messages": [
+                    {
+                        "type": "request-start",
+                        "content": "Thank you for your time today. We’ll be in touch with next steps. Have a great day!",
+                        "blocking": true
+                    }
+                ]
+            }
+        }
+    ],
+    "edges": [
+        {
+            "from": "introduction",
+            "to": "role_confirmation"
+        },
+        {
+            "from": "role_confirmation",
+            "to": "background_summary"
+        },
+        {
+            "from": "background_summary",
+            "to": "screening_must_have"
+        },
+        {
+            "from": "screening_must_have",
+            "to": "behavioral_star"
+        },
+        {
+            "from": "behavioral_star",
+            "to": "technical_deep_dive"
+        },
+        {
+            "from": "technical_deep_dive",
+            "to": "system_design",
+            "condition": {
+                "type": "logic",
+                "property": "years_experience",
+                "operator": "greaterThanOrEqual",
+                "value": 3
+            }
+        },
+        {
+            "from": "technical_deep_dive",
+            "to": "salary_availability",
+            "condition": {
+                "type": "logic",
+                "property": "years_experience",
+                "operator": "lessThan",
+                "value": 3
+            }
+        },
+        {
+            "from": "technical_deep_dive",
+            "to": "salary_availability"
+        },
+        {
+            "from": "salary_availability",
+            "to": "candidate_questions"
+        },
+        {
+            "from": "candidate_questions",
+            "to": "summarize_and_score"
+        },
+        {
+            "from": "summarize_and_score",
+            "to": "schedule_or_followup"
+        },
+        {
+            "from": "schedule_or_followup",
+            "to": "End Call"
+        },
+        {
+            "from": "reschedule_call",
+            "to": "End Call"
+        },
+        {
+            "from": "disqualify_closure",
+            "to": "End Call"
+        },
+        {
+            "from": "human_handoff",
+            "to": "End Call"
+        }
+    ],
+    "globalPrompt": "Interview policy: one question at a time; speak clearly; confirm understanding; be inclusive and unbiased; gracefully decline to answer unrelated personal questions; do not give legal/medical/financial advice; if user requests a human or the agent detects frustration/urgent concern, hand off via the global node; keep messages short (under 25 words) unless the candidate asks for detail."
+}

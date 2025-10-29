@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JasTalk Interview Agent</title>
+    <script type="module" crossorigin src="https://unpkg.com/@pipecat-ai/client-js@0.5.5/dist/index.js"></script>
+    <script type="module" crossorigin src="https://unpkg.com/@pipecat-ai/small-webrtc-transport@0.2.2/dist/index.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+            max-width: 900px;
+            width: 100%;
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+        .interview-info {
+            background: #f7f9fc;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .interview-info h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .interview-info p {
+            color: #666;
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+        .interview-info strong {
+            color: #667eea;
+        }
+        #video-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        #connect-btn {
+            background: #667eea;
+            color: white;
+        }
+        #connect-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+        #connect-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        #disconnect-btn {
+            background: #ef4444;
+            color: white;
+            display: none;
+        }
+        #disconnect-btn:hover {
+            background: #dc2626;
+        }
+        .status {
+            text-align: center;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        .status.connecting {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .status.connected {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 JasTalk Interview Agent</h1>
+        <p class="subtitle">AI-Powered Voice Interview Practice</p>
+
+        <div id="interview-info" class="interview-info hidden">
+            <h3>📋 Interview Details</h3>
+            <p><strong>Role:</strong> <span id="info-title">-</span></p>
+            <p><strong>Difficulty:</strong> <span id="info-difficulty">-</span></p>
+            <p><strong>Duration:</strong> <span id="info-duration">-</span> minutes</p>
+            <p><strong>Category:</strong> <span id="info-category">-</span></p>
+        </div>
+
+        <div id="status" class="status hidden"></div>
+
+        <div id="video-container">
+            <video id="local-video" autoplay playsinline muted></video>
+        </div>
+
+        <div class="controls">
+            <button id="connect-btn">Connect & Start Interview</button>
+            <button id="disconnect-btn">End Interview</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { PipecatClient, RTVIEvent } from 'https://unpkg.com/@pipecat-ai/client-js@0.5.5/dist/index.js';
+        import { SmallWebRTCTransport } from 'https://unpkg.com/@pipecat-ai/small-webrtc-transport@0.2.2/dist/index.js';
+
+        const connectBtn = document.getElementById('connect-btn');
+        const disconnectBtn = document.getElementById('disconnect-btn');
+        const statusEl = document.getElementById('status');
+        const localVideo = document.getElementById('local-video');
+        const interviewInfo = document.getElementById('interview-info');
+
+        let client = null;
+        let interviewData = {};
+
+        // Extract URL parameters
+        function getURLParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                interview_title: params.get('interview_title') || '',
+                interview_company: params.get('interview_company') || '',
+                interview_difficulty: params.get('interview_difficulty') || '',
+                interview_duration: params.get('interview_duration') || '',
+                interview_category: params.get('interview_category') || '',
+                interview_questions: params.get('interview_questions') || '',
+                user_name: params.get('user_name') || 'Candidate',
+                user_email: params.get('user_email') || '',
+                context: params.get('context') || '',
+                mode: params.get('mode') || 'voice'
+            };
+        }
+
+        // Display interview information
+        function displayInterviewInfo() {
+            interviewData = getURLParams();
+
+            if (interviewData.interview_title) {
+                document.getElementById('info-title').textContent = interviewData.interview_title;
+                document.getElementById('info-difficulty').textContent = interviewData.interview_difficulty || 'N/A';
+                document.getElementById('info-duration').textContent = interviewData.interview_duration || 'N/A';
+                document.getElementById('info-category').textContent = interviewData.interview_category || 'N/A';
+                interviewInfo.classList.remove('hidden');
+            }
+        }
+
+        function showStatus(message, type = 'info') {
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+            statusEl.classList.remove('hidden');
+        }
+
+        function hideStatus() {
+            statusEl.classList.add('hidden');
+        }
+
+        async function connect() {
+            try {
+                connectBtn.disabled = true;
+                showStatus('Connecting to interview agent...', 'connecting');
+
+                // Create transport
+                const transport = new SmallWebRTCTransport();
+
+                // Create client
+                client = new PipecatClient({
+                    transport,
+                    enableMic: true,
+                    enableCam: true,
+                });
+
+                // Set up event handlers
+                client.on(RTVIEvent.Connected, () => {
+                    console.log('✅ Connected to bot');
+                    showStatus('Connected! Sending interview details...', 'connected');
+
+                    // Send interview data as app message
+                    setTimeout(() => {
+                        const questions = interviewData.interview_questions ?
+                            JSON.parse(interviewData.interview_questions) : [];
+
+                        const message = {
+                            template: interviewData.interview_title,
+                            language: 'en',
+                            questions: questions,
+                            difficulty: interviewData.interview_difficulty,
+                            duration: interviewData.interview_duration,
+                            category: interviewData.interview_category,
+                            company: interviewData.interview_company,
+                            user_name: interviewData.user_name
+                        };
+
+                        console.log('📤 Sending interview data:', message);
+                        client.sendAppMessage(message);
+
+                        showStatus('Interview started! Say "Hey" to begin.', 'connected');
+                        connectBtn.style.display = 'none';
+                        disconnectBtn.style.display = 'block';
+                    }, 1000);
+                });
+
+                client.on(RTVIEvent.Disconnected, () => {
+                    console.log('Disconnected');
+                    showStatus('Disconnected from interview', 'error');
+                    connectBtn.style.display = 'block';
+                    disconnectBtn.style.display = 'none';
+                    connectBtn.disabled = false;
+                });
+
+                client.on(RTVIEvent.TrackStarted, (track, participant) => {
+                    console.log('Track started:', track.kind);
+                    if (track.kind === 'video' && participant?.local) {
+                        localVideo.srcObject = new MediaStream([track]);
+                    }
+                });
+
+                client.on(RTVIEvent.Error, (error) => {
+                    console.error('Client error:', error);
+                    showStatus(`Error: ${error.message}`, 'error');
+                    connectBtn.disabled = false;
+                });
+
+                // Connect
+                await client.connect();
+
+            } catch (error) {
+                console.error('Connection error:', error);
+                showStatus(`Connection failed: ${error.message}`, 'error');
+                connectBtn.disabled = false;
+            }
+        }
+
+        async function disconnect() {
+            if (client) {
+                await client.disconnect();
+                client = null;
+            }
+        }
+
+        // Event listeners
+        connectBtn.addEventListener('click', connect);
+        disconnectBtn.addEventListener('click', disconnect);
+
+        // Initialize
+        displayInterviewInfo();
+        console.log('🎯 JasTalk Interview Agent loaded');
+        console.log('📊 Interview data:', interviewData);
+    </script>
+</body>
+</html>
