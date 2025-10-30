@@ -26,6 +26,7 @@
     "@pipecat-ai/daily-transport": "^1.4.0",
     "@pipecat-ai/small-webrtc-transport": "^1.7.0",
     "@vapi-ai/web": "^1.0.0",
+    "dotenv": "^17.2.3",
     "lucide-react": "^0.263.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
