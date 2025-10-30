@@ -1,2 +1,7 @@
 node_modules
 .vercel
+
+# Environment files
+.env
+.env.*
+server/agent/.env
