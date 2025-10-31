@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Mic, MicOff, Phone, PhoneOff, Volume2, Clock, MessageSquare, MessageCircle } from 'lucide-react';
 import ChatWithAgent from './ChatWithAgent';
+import { saveMockInterview } from '../services/resultsService';
 
 const InterviewPage = ({ interview, onExit, t, userInfo = {} }) => {
   const navigate = useNavigate();
@@ -45,6 +46,17 @@ const InterviewPage = ({ interview, onExit, t, userInfo = {} }) => {
       setCurrentQuestionIndex(prev => prev + 1);
       setCurrentAnswer('');
     } else {
+      try {
+        saveMockInterview({
+          title: interview.title || interview.subTitle || 'Mock Interview',
+          category: interview.category,
+          questions: interview.questions,
+          answers: newAnswers,
+          durationMinutes: interview.duration_minutes,
+        });
+      } catch (e) {
+        console.warn('Failed to save mock interview result', e);
+      }
       alert(`Interview completed! You answered ${newAnswers.length} questions. Great job!`);
       handleExit();
     }

@@ -380,27 +380,7 @@ const App = () => {
             />
             <Route
               path="/custom"
-              element={
-                <CustomInterviews
-                  t={t}
-                  jobSearchQuery={jobSearchQuery}
-                  setJobSearchQuery={setJobSearchQuery}
-                  jobSearchLocation={jobSearchLocation}
-                  setJobSearchLocation={setJobSearchLocation}
-                  handleJobSearch={handleJobSearch}
-                  isSearching={isSearching}
-                  searchError={searchError}
-                  searchResults={searchResults}
-                  handleGenerateInterview={handleGenerateInterview}
-                  handleApplyToJob={handleApplyToJob}
-                  generatingJobId={generatingJobId}
-                  applyingJobId={applyingJobId}
-                  customInterviews={customInterviews}
-                  setActiveInterview={setActiveInterview}
-                  setCurrentQuestionIndex={setCurrentQuestionIndex}
-                  setUserAnswers={setUserAnswers}
-                />
-              }
+              element={<CustomInterviews />}
             />
             <Route path="/results" element={<Results t={t} />} />
             <Route path="/billing" element={<Billing t={t} />} />

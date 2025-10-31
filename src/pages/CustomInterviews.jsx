@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Target, Briefcase, MapPin, Search, X, Upload, FileText, Edit, Mic, Square, Play, ChevronLeft, ChevronRight, Copy, RotateCcw } from 'lucide-react';
-import JobCard from '../components/JobCard';
 import { 
   BriefcaseIcon, 
   LightbulbIcon, 
@@ -25,6 +24,10 @@ import {
   ClipboardIcon 
 } from '../components/AIJobFitIcons';
 import { analyzeResume, searchJobs, generateInterviewQuestions, analyzeInterviewTranscript, generateResumeSuggestion } from '../services/geminiAIService';
+import ResumeEditorModal from '../components/ResumeEditorModal';
+import AIInterviewModal from '../components/AIInterviewModal';
+import AIInterviewHistoryModal from '../components/AIInterviewHistoryModal';
+import { addJob as addJobToHistory, listJobs as listJobsFromHistory, clearJobs as clearJobsFromHistory, addAnalysisToJob } from '../services/jobHistoryService';
 import { extractTextFromPDF, isPDFFile, isValidPDFSize } from '../services/pdfProcessor';
 
 const CustomInterviews = ({
@@ -58,9 +61,11 @@ const CustomInterviews = ({
   const [selectedJob, setSelectedJob] = useState(null);
   const [interviewQuestions, setInterviewQuestions] = useState([]);
   const [jobHistory, setJobHistory] = useState([]);
+  const [savedJobs, setSavedJobs] = useState(new Set());
   const [totalTokenUsage, setTotalTokenUsage] = useState({ promptTokens: 0, candidatesTokens: 0, totalTokens: 0 });
   const [isResumeEditorOpen, setIsResumeEditorOpen] = useState(false);
   const [isAIInterviewOpen, setIsAIInterviewOpen] = useState(false);
+  const [historyJob, setHistoryJob] = useState(null);
   const [loadingState, setLoadingState] = useState({
     analysis: false,
     jobs: false,
@@ -87,6 +92,21 @@ const CustomInterviews = ({
   const [interviewStatus, setInterviewStatus] = useState('idle');
   const [aiCurrentQuestionIndex, setAICurrentQuestionIndex] = useState(0);
   const [interviewAnalysis, setInterviewAnalysis] = useState(null);
+  // Persist last successful analysis to keep users on results view when returning to /custom
+  const ANALYZER_CACHE_KEY = 'custom_analyzer_last_state';
+  const loadAnalyzerCache = useCallback(() => {
+    try {
+      const raw = localStorage.getItem(ANALYZER_CACHE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      console.warn('Failed to parse analyzer cache', e);
+      return null;
+    }
+  }, []);
+  const saveAnalyzerCache = useCallback((payload) => {
+    try { localStorage.setItem(ANALYZER_CACHE_KEY, JSON.stringify(payload)); } catch (e) {}
+  }, []);
+  const clearAnalyzerCache = useCallback(() => { try { localStorage.removeItem(ANALYZER_CACHE_KEY); } catch (e) {} }, []);
 
   const updateTokenUsage = useCallback((usage) => {
     setTotalTokenUsage(prev => ({
@@ -112,6 +132,7 @@ const CustomInterviews = ({
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+    clearAnalyzerCache();
   };
 
   const handleResumeAnalysis = async () => {
@@ -138,6 +159,8 @@ const CustomInterviews = ({
       const { analysis, usage } = await analyzeResume(input);
       setResumeAnalysis(analysis);
       updateTokenUsage(usage);
+      // Save partial cache so we can restore the analysis quickly on return
+      saveAnalyzerCache({ resumeAnalysis: analysis, aiJobs: [], sources: [], ts: Date.now() });
       
       // Auto-search for jobs based on potential job titles
       if (analysis.potentialJobTitles && analysis.potentialJobTitles.length > 0) {
@@ -152,6 +175,27 @@ const CustomInterviews = ({
     }
   };
 
+  const refreshJobHistory = () => {
+    const list = listJobsFromHistory();
+    setJobHistory(list);
+    setSavedJobs(new Set(list.map(e => e.id)));
+  };
+
+  const saveJobsAndQuestions = async (jobs) => {
+    try {
+      const results = await Promise.all(jobs.map(j =>
+        generateInterviewQuestions(j.title, j.description).catch(() => ({ questions: [] }))
+      ));
+      jobs.forEach((j, i) => {
+        const questions = results[i].questions || [];
+        addJobToHistory(j, questions);
+      });
+      refreshJobHistory();
+    } catch (e) {
+      console.error('Background save failed', e);
+    }
+  };
+
   const handleJobSearchAI = async (query) => {
     setLoadingState(prev => ({ ...prev, jobs: true }));
     setError(null);
@@ -161,6 +205,14 @@ const CustomInterviews = ({
       setAiJobs(jobs);
       setSources(jobSources);
       updateTokenUsage(usage);
+      // Persist jobs with last analysis so visiting /custom returns to results
+      const cached = loadAnalyzerCache();
+      const analysis = cached?.resumeAnalysis || resumeAnalysis || null;
+      if (analysis) {
+        saveAnalyzerCache({ resumeAnalysis: analysis, aiJobs: jobs, sources: jobSources, ts: Date.now() });
+      }
+      // Precompute questions and save to history (fire-and-forget)
+      saveJobsAndQuestions(jobs);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -177,16 +229,9 @@ const CustomInterviews = ({
       const { questions, usage } = await generateInterviewQuestions(job.title, job.description);
       setInterviewQuestions(questions);
       updateTokenUsage(usage);
-      
-      // Add to job history
-      const historyEntry = {
-        id: `job-${Date.now()}`,
-        job,
-        questions,
-        timestamp: Date.now(),
-        interviewHistory: []
-      };
-      setJobHistory(prev => [historyEntry, ...prev]);
+      // Persist to history
+      addJobToHistory(job, questions);
+      refreshJobHistory();
       
     } catch (err) {
       setError(err.message);
@@ -194,6 +239,17 @@ const CustomInterviews = ({
       setLoadingState(prev => ({ ...prev, questions: false }));
     }
   };
+
+  useEffect(() => {
+    refreshJobHistory();
+    const cached = loadAnalyzerCache();
+    if (cached?.resumeAnalysis) {
+      setResumeAnalysis(cached.resumeAnalysis);
+      setAiJobs(cached.aiJobs || []);
+      setSources(cached.sources || []);
+      setStep('results');
+    }
+  }, [loadAnalyzerCache]);
 
   // PDF Processing Functions
   const handleFileSelect = async (file) => {
@@ -330,41 +386,73 @@ const CustomInterviews = ({
     </div>
   );
 
-  const AIJobCard = ({ job, onGenerateQuestions, onViewInterview, isGenerating }) => (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700 p-6 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-start gap-3">
-          <BriefcaseIcon className="w-6 h-6 text-orange-500 flex-shrink-0 mt-1" />
+  const handleSaveJob = (jobId) => {
+    const job = aiJobs.find(j => j.id === jobId);
+    if (job) {
+      addJobToHistory(job, []);
+      refreshJobHistory();
+    }
+  };
+
+  const handleShareJob = (job) => {
+    const shareData = { title: job.title, text: `${job.title} at ${job.company}`, url: job.url || window.location.href };
+    if (navigator.share) {
+      navigator.share(shareData).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(shareData.url).then(() => alert('Job link copied to clipboard')).catch(() => {});
+    }
+  };
+
+  const AIJobCard = ({ job, onPrepInterview, isPreparing, isSaved, onSave, onShare }) => {
+    const resolvedUrl = (job.url || '').trim();
+    const isValidUrl = /^https?:\/\//i.test(resolvedUrl);
+    const fallbackSearch = `https://www.google.com/search?q=${encodeURIComponent(`${job.title} ${job.company} job`)}`;
+    const [expanded, setExpanded] = useState(false);
+    const isLong = (job.description || '').length > 160;
+    const shown = expanded ? job.description : (isLong ? (job.description || '').slice(0, 160) + '…' : job.description);
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 p-6 border border-slate-200 dark:border-slate-700 flex flex-col">
+        <div className="flex justify-between items-start">
           <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{job.title}</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{job.company} • {job.location}</p>
-            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{job.description}</p>
+            <h3 className="text-xl font-bold text-indigo-600 dark:text-indigo-400">{job.title}</h3>
+            <p className="text-slate-600 dark:text-slate-300 font-medium">{job.company}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{job.location}</p>
+          </div>
+          <div className="flex items-center gap-1">
+            <button onClick={() => onSave(job.id)} className={`p-2 rounded-full ${isSaved ? 'text-indigo-500 bg-indigo-100 dark:bg-indigo-900' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'}`} title={isSaved ? 'Saved' : 'Save job'}>
+              <BookmarkIcon className="h-5 w-5" />
+            </button>
           </div>
         </div>
-        <ExternalLinkIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
-      </div>
-      <div className="flex gap-2 pt-4 border-t dark:border-gray-700">
-        <button
-          onClick={() => onGenerateQuestions(job)}
-          disabled={isGenerating}
-          className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-        >
-          {isGenerating ? (
-            <ArrowPathIcon className="w-4 h-4 animate-spin" />
-          ) : (
-            <LightbulbIcon className="w-4 h-4" />
+        <div className="mt-4 text-slate-700 dark:text-slate-200 text-sm leading-relaxed flex-grow">
+          <p className="whitespace-pre-wrap">{shown}</p>
+          {isLong && (
+            <button onClick={() => setExpanded(!expanded)} className="text-indigo-600 dark:text-indigo-400 hover:underline text-sm font-medium mt-2">
+              {expanded ? 'Show less' : 'Show more'}
+            </button>
           )}
-          {isGenerating ? 'Generating...' : 'Generate Questions'}
-        </button>
-        <button
-          onClick={() => onViewInterview(job)}
-          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-        >
-          View Details
-        </button>
+        </div>
+        <div className="mt-6 flex flex-wrap gap-2 items-center">
+          <a
+            href={isValidUrl ? resolvedUrl : fallbackSearch}
+            target="_blank"
+            rel="noopener noreferrer nofollow"
+            referrerPolicy="no-referrer"
+            title={isValidUrl ? 'Apply (opens in new tab)' : 'Direct link unavailable — opening search results'}
+            className={`flex-1 min-w-[120px] inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${isPreparing ? 'bg-indigo-500' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+          >
+            Apply <ExternalLinkIcon className="ml-2 h-4 w-4" />
+          </a>
+          <button onClick={() => onPrepInterview(job)} disabled={isPreparing} className="flex-1 min-w-[120px] inline-flex items-center justify-center px-4 py-2 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700">
+            {isPreparing ? <ArrowPathIcon className="mr-2 h-4 w-4 animate-spin" /> : null} Prep Interview
+          </button>
+          <button onClick={() => onShare(job)} className="p-2 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400" title="Share">
+            <ShareIcon className="h-5 w-5" />
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
       <div className="p-8">
@@ -757,7 +845,7 @@ const CustomInterviews = ({
             {/* Job Search Results */}
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border dark:border-gray-700 shadow-sm mb-8">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Matching Jobs</h2>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Recommended Jobs</h2>
                 <div className="flex items-center gap-4">
                   {loadingState.jobs && (
                     <div className="flex items-center gap-2 text-orange-500">
@@ -783,12 +871,27 @@ const CustomInterviews = ({
                     <AIJobCard
                       key={job.id}
                       job={job}
-                      onGenerateQuestions={handleGenerateQuestions}
-                      onViewInterview={(job) => {
-                        setSelectedJob(job);
-                        // Handle view interview logic
+                      isSaved={savedJobs.has(job.id)}
+                      onSave={handleSaveJob}
+                      onShare={handleShareJob}
+                      onPrepInterview={async (j) => {
+                        setSelectedJob(j);
+                        setLoadingState(prev => ({ ...prev, questions: true }));
+                        try {
+                          let qs = interviewQuestions;
+                          if (!qs || qs.length === 0 || selectedJob?.id !== j.id) {
+                            const { questions, usage } = await generateInterviewQuestions(j.title, j.description);
+                            setInterviewQuestions(questions);
+                            updateTokenUsage(usage);
+                          }
+                          setIsAIInterviewOpen(true);
+                        } catch (e) {
+                          setError(e.message || 'Failed to prepare interview');
+                        } finally {
+                          setLoadingState(prev => ({ ...prev, questions: false }));
+                        }
                       }}
-                      isGenerating={loadingState.questions && selectedJob?.id === job.id}
+                      isPreparing={loadingState.questions && selectedJob?.id === job.id}
                     />
                   ))}
                 </div>
@@ -832,6 +935,29 @@ const CustomInterviews = ({
         )}
 
       </div>
+      {/* Modals */}
+      {isResumeEditorOpen && (
+        <ResumeEditorModal
+          isOpen={isResumeEditorOpen}
+          initialResumeText={resumeText}
+          onClose={() => setIsResumeEditorOpen(false)}
+          onSave={(text) => { setResumeText(text); setIsResumeEditorOpen(false); }}
+          updateTokenUsage={updateTokenUsage}
+          setError={setError}
+        />
+      )}
+      {isAIInterviewOpen && selectedJob && (
+        <AIInterviewModal
+          job={selectedJob}
+          questions={interviewQuestions}
+          onClose={() => setIsAIInterviewOpen(false)}
+          onAnalysisComplete={(usage) => { updateTokenUsage(usage); refreshJobHistory(); }}
+          onOpenHistory={(job) => { setIsAIInterviewOpen(false); setHistoryJob(job); }}
+        />
+      )}
+      {historyJob && (
+        <AIInterviewHistoryModal job={historyJob} onClose={() => setHistoryJob(null)} />
+      )}
     </div>
   );
 };

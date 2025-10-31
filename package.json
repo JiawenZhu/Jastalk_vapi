@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "cross-env NODE_OPTIONS=--no-deprecation vite --port 3002",
+    "dev:all": "concurrently -c green,cyan \"npm run dev\" \"npm --prefix custom-app run dev\"",
     "build": "vite build",
     "preview": "vite preview --port 3002",
     "start": "vite --port 3002"
@@ -19,6 +20,7 @@
     "react-router-dom": "^7.9.4"
   },
   "devDependencies": {
+    "concurrently": "^9.0.1",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
     "@vitejs/plugin-react": "^4.0.3",

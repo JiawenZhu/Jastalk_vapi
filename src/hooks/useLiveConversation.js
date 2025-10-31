@@ -21,6 +21,27 @@ export const useLiveConversation = () => {
   const sourcesRef = useRef(new Set());
   const currentInputTranscriptionRef = useRef('');
   const currentOutputTranscriptionRef = useRef('');
+  const displayedInputRef = useRef('');
+  const displayedOutputRef = useRef('');
+  const lastInputUpdateRef = useRef(0);
+  const lastOutputUpdateRef = useRef(0);
+
+  const mergeChunk = (current, chunk) => {
+    if (!chunk) return current || '';
+    if (!current) return chunk;
+    // If the new chunk already exists within current, ignore it
+    if (current.includes(chunk) && chunk.length <= current.length) return current;
+    // If the chunk is an extension of current, replace with chunk
+    if (chunk.startsWith(current)) return chunk;
+    // Find the largest overlap between end of current and start of chunk
+    const max = Math.min(current.length, chunk.length);
+    for (let k = max; k > 0; k--) {
+      if (current.slice(-k) === chunk.slice(0, k)) {
+        return current + chunk.slice(k);
+      }
+    }
+    return current + chunk;
+  };
 
   const cleanupAudio = useCallback(() => {
     console.log("Cleaning up audio resources...");
@@ -124,32 +145,58 @@ export const useLiveConversation = () => {
             scriptProcessorRef.current.connect(inputAudioContextRef.current.destination);
           },
           onmessage: async (message) => {
-            if (message.serverContent?.outputTranscription) {
-              const text = message.serverContent.outputTranscription.text;
-              currentOutputTranscriptionRef.current += text;
-            } else if (message.serverContent?.inputTranscription) {
-              const text = message.serverContent.inputTranscription.text;
-              currentInputTranscriptionRef.current += text;
+            // Stream input transcription (user)
+            if (message.serverContent?.inputTranscription) {
+              const chunk = message.serverContent.inputTranscription.text || '';
+              // Build a stable progressive string
+              currentInputTranscriptionRef.current = mergeChunk(currentInputTranscriptionRef.current, chunk);
+              const now = Date.now();
+              if (now - lastInputUpdateRef.current > 80) {
+                lastInputUpdateRef.current = now;
+                const full = currentInputTranscriptionRef.current;
+                setTranscript(prev => {
+                  const arr = [...prev];
+                  const last = arr[arr.length - 1];
+                  if (last && last.speaker === 'user' && !last.isFinal) {
+                    last.text = full;
+                  } else if (full.trim() && full !== PRIMING_MESSAGE) {
+                    arr.push({ speaker: 'user', text: full, isFinal: false });
+                  }
+                  return arr;
+                });
+                displayedInputRef.current = full;
+              }
             }
 
-            if (message.serverContent?.turnComplete) {
-              const fullInput = currentInputTranscriptionRef.current.trim();
-              const fullOutput = currentOutputTranscriptionRef.current.trim();
-              
-              setTranscript(prev => {
-                  const newTranscript = [...prev];
-                  // Hide the priming message from the user-facing transcript
-                  if (fullInput && fullInput !== PRIMING_MESSAGE) {
-                    newTranscript.push({speaker: 'user', text: fullInput});
+            // Stream output transcription (model)
+            if (message.serverContent?.outputTranscription) {
+              const chunk = message.serverContent.outputTranscription.text || '';
+              currentOutputTranscriptionRef.current = mergeChunk(currentOutputTranscriptionRef.current, chunk);
+              const now = Date.now();
+              if (now - lastOutputUpdateRef.current > 80) {
+                lastOutputUpdateRef.current = now;
+                const full = currentOutputTranscriptionRef.current;
+                setTranscript(prev => {
+                  const arr = [...prev];
+                  const last = arr[arr.length - 1];
+                  if (last && last.speaker === 'model' && !last.isFinal) {
+                    last.text = full;
+                  } else if (full.trim()) {
+                    arr.push({ speaker: 'model', text: full, isFinal: false });
                   }
-                  if (fullOutput) {
-                    newTranscript.push({speaker: 'model', text: fullOutput});
-                  }
-                  return newTranscript;
-              });
+                  return arr;
+                });
+                displayedOutputRef.current = full;
+              }
+            }
 
+            // When a turn completes, mark the ongoing segments as final and reset buffers
+            if (message.serverContent?.turnComplete) {
+              setTranscript(prev => prev.map(t => (t.isFinal ? t : { ...t, isFinal: true })));
               currentInputTranscriptionRef.current = '';
               currentOutputTranscriptionRef.current = '';
+              displayedInputRef.current = '';
+              displayedOutputRef.current = '';
             }
             
             const base64Audio = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
