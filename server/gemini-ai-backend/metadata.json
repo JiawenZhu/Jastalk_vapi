@@ -1,7 +1,0 @@
-{
-  "name": "Gemini AI Studio",
-  "description": "A modern web application that uses the Gemini API to convert text into high-quality speech and engage in real-time voice conversations.",
-  "requestFramePermissions": [
-    "microphone"
-  ]
-}

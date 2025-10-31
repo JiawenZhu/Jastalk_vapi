@@ -1,11 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Vapi from '@vapi-ai/web';
-import { PipecatClient, RTVIEvent } from '@pipecat-ai/client-js';
-import { DailyTransport } from '@pipecat-ai/daily-transport';
-import { SmallWebRTCTransport } from '@pipecat-ai/small-webrtc-transport';
 import templatesJson from '../interview_templates.json';
-import flowPrompt from '../interview_flow_prompt.md?raw';
 import { searchJobs, applyToJob } from './utils/talentSolutionApi';
 
 // Import page components
@@ -15,11 +10,6 @@ import Results from './pages/Results';
 import Billing from './pages/Billing';
 import InterviewPage from './pages/InterviewPage';
 import Layout from './components/Layout';
-
-// Environment variables
-const _VITE = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : {};
-const _PROC = (typeof globalThis !== 'undefined' && globalThis.process && globalThis.process.env) ? globalThis.process.env : {};
-const VAPI_PUBLIC_KEY = _VITE.VITE_VAPI_PUBLIC_KEY || _PROC.NEXT_PUBLIC_VAPI_PUBLIC_KEY || '';
 
 const App = () => {
   // Language and UI state

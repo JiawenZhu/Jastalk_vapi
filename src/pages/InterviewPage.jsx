@@ -1,17 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Mic, MicOff, Phone, PhoneOff, Volume2, Clock, MessageSquare, MessageCircle } from 'lucide-react';
-import Vapi from '@vapi-ai/web';
-import { PipecatClient, RTVIEvent } from '@pipecat-ai/client-js';
-import { DailyTransport } from '@pipecat-ai/daily-transport';
-import { SmallWebRTCTransport } from '@pipecat-ai/small-webrtc-transport';
 import ChatWithAgent from './ChatWithAgent';
-
-// Environment variables
-const _VITE = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : {};
-const _PROC = (typeof globalThis !== 'undefined' && globalThis.process && globalThis.process.env) ? globalThis.process.env : {};
-const VAPI_PUBLIC_KEY = _VITE.VITE_VAPI_PUBLIC_KEY || _PROC.NEXT_PUBLIC_VAPI_PUBLIC_KEY || '';
-const DEFAULT_PROVIDER = (_VITE.VITE_PROVIDER || _PROC.NEXT_PUBLIC_PROVIDER || 'pipecat').toLowerCase();
 
 const InterviewPage = ({ interview, onExit, t, userInfo = {} }) => {
   const navigate = useNavigate();

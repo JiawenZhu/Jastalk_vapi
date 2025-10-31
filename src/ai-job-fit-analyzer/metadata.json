@@ -1,0 +1,7 @@
+{
+  "name": "AI Job-Fit Analyzer",
+  "description": "An intelligent web application that analyzes a user’s resume to provide personalized job recommendations and interview preparation assistance.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
